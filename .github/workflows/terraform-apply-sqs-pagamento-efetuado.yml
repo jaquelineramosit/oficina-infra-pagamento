@@ -1,6 +1,11 @@
 name: Terraform Apply SQS Pagamento Efetuado
 
 on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-apply-sqs-pagamento-efetuado.yml"
   workflow_dispatch:
 
 permissions:
