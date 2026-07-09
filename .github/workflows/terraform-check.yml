@@ -12,14 +12,18 @@ concurrency:
   group: terraform-sqs-check-${{ github.ref_name }}
   cancel-in-progress: true
 
-defaults:
-  run:
-    working-directory: terraform
-
 jobs:
   check:
     name: Check
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        working-directory: [ terraform, terraform-dynamodb ]
+
+    defaults:
+      run:
+        working-directory: ${{ matrix.working-directory }}
 
     steps:
       - name: Checkout
