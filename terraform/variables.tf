@@ -150,3 +150,60 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "database_name" {
+  description = "Nome logico do banco de dados, usado em tags."
+  type        = string
+  default     = "oficina-pagamento-db"
+
+  validation {
+    condition     = length(trimspace(var.database_name)) > 0
+    error_message = "database_name nao pode ser vazio."
+  }
+}
+
+variable "table_name" {
+  description = "Nome da tabela DynamoDB."
+  type        = string
+  default     = "oficina-pagamento-tbl"
+
+  validation {
+    condition     = length(trimspace(var.table_name)) > 0
+    error_message = "table_name nao pode ser vazio."
+  }
+}
+
+variable "hash_key_name" {
+  description = "Nome do atributo de partition key da tabela."
+  type        = string
+  default     = "id"
+}
+
+variable "hash_key_type" {
+  description = "Tipo do atributo de partition key (S, N ou B)."
+  type        = string
+  default     = "S"
+
+  validation {
+    condition     = contains(["S", "N", "B"], var.hash_key_type)
+    error_message = "hash_key_type deve ser S, N ou B."
+  }
+}
+
+variable "billing_mode" {
+  description = "Modo de cobranca da tabela DynamoDB."
+  type        = string
+  default     = "PAY_PER_REQUEST"
+
+  validation {
+    condition     = contains(["PAY_PER_REQUEST", "PROVISIONED"], var.billing_mode)
+    error_message = "billing_mode deve ser PAY_PER_REQUEST ou PROVISIONED."
+  }
+}
+
+variable "attach_lambda_dynamodb_policy" {
+  description = "Define se o Terraform deve anexar uma policy inline na role da Lambda para acessar a tabela."
+  type        = bool
+  default     = true
+}
+

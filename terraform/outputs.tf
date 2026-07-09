@@ -27,8 +27,3 @@ output "dlq_url" {
   description = "URL da DLQ."
   value       = aws_sqs_queue.dlq.url
 }
-
-output "lambda_event_source_mapping_uuid" {
-  description = "UUID do event source mapping entre a fila SQS e a Lambda."
-  value       = aws_lambda_event_source_mapping.payment_queue.uuid
-}
