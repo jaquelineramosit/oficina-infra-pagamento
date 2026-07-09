@@ -34,12 +34,6 @@ variable "queue_name" {
   }
 }
 
-variable "lambda_function_name" {
-  description = "Nome da Lambda que sera acionada pela fila SQS."
-  type        = string
-  default     = "oficina-app-pagamento"
-}
-
 variable "attach_lambda_sqs_policy" {
   description = "Define se o Terraform deve anexar uma policy inline na role da Lambda para consumir e publicar mensagens na fila."
   type        = bool

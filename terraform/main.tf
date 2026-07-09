@@ -47,3 +47,54 @@ resource "aws_sqs_queue" "main" {
     }
   )
 }
+
+# 1. Cria a política com permissões para o SQS
+resource "aws_iam_policy" "sqs_developer_policy" {
+  name        = "${var.project_name}-sqs-pagamento-policy"
+  description = "Permite gerenciar as filas SQS do projeto oficina"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:CreateQueue",
+          "sqs:DeleteQueue",
+          "sqs:GetQueueAttributes",
+          "sqs:SetQueueAttributes",
+          "sqs:ListQueues",
+          "sqs:SendMessage",
+          "sqs:ReceiveMessage"
+        ]
+        Resource = "arn:aws:sqs:*:539963454755:${var.project_name}-*"
+      }
+    ]
+  })
+}
+
+# 2. Cria a Role que seu pipeline/usuário precisará assumir
+resource "aws_iam_role" "sqs_developer_role" {
+  name = "${var.project_name}-sqs-developer-role"
+
+  # Define quem tem permissão de "assumir" essa role (assume_role)
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          # Permite que o seu usuário atual do laboratório assuma esta nova role
+          AWS = "arn:aws:iam::539963454755:root" 
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# 3. Conecta a Política na Role
+resource "aws_iam_role_policy_attachment" "attach_sqs" {
+  role       = aws_iam_role.sqs_developer_role.name
+  policy_arn = aws_iam_policy.sqs_developer_policy.arn
+}
