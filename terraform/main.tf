@@ -13,6 +13,7 @@ locals {
 
 resource "aws_sqs_queue" "dlq" {
   name                      = "${var.queue_name}-dlq"
+  role_arn                  = var.labRole
   message_retention_seconds = var.dlq_message_retention_seconds
   sqs_managed_sse_enabled   = true
 
@@ -27,6 +28,7 @@ resource "aws_sqs_queue" "dlq" {
 
 resource "aws_sqs_queue" "main" {
   name                       = var.queue_name
+  role_arn                   = var.labRole
   delay_seconds              = var.delay_seconds
   max_message_size           = var.max_message_size
   message_retention_seconds  = var.message_retention_seconds
