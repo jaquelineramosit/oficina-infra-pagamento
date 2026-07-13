@@ -200,7 +200,3 @@ variable "attach_lambda_dynamodb_policy" {
   type        = bool
   default     = true
 }
-
-variable "labRole" {
-  default = "arn:aws:iam::539963454755:role/LabRole"
-}

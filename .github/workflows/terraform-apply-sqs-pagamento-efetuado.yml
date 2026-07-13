@@ -80,10 +80,6 @@ jobs:
           aws-session-token: ${{ env.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
-          role-to-assume: arn:aws:iam::539963454755:role/LabRole
-          role-duration-seconds: 1200
-          role-skip-session-tagging: true
-
       - name: Ensure Terraform state bucket
         shell: bash
         run: |
