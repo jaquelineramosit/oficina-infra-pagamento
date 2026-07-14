@@ -1,0 +1,16 @@
+services:
+  localstack:
+    image: localstack/localstack:3
+    container_name: oficina-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs,dynamodb
+      - DEBUG=0
+    volumes:
+      - "./local/localstack-data:/var/lib/localstack"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
