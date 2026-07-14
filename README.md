@@ -1,14 +1,51 @@
-# Infra SQS Pagamento
+# Infra Pagamento (SQS + DynamoDB)
 
-Infraestrutura Terraform para criar filas AWS SQS do pagamento, cada uma com sua respectiva DLQ.
+Infraestrutura Terraform da parte compartilhada do domínio de pagamento:
+as filas SQS e a tabela DynamoDB. A Lambda que as consome (Lambda +
+gatilhos) mora num repositório separado,
+[`oficina-app-pagamento`](https://github.com/jaquelineramosit/oficina-app-pagamento),
+e só referencia esses recursos por variável de ambiente — este repositório
+é o único dono da criação deles.
 
-## Filas
+## Filas (`terraform/`)
 
 - `sqs-pagamento-solicitar`
 - `sqs-pagamento-recusado`
 - `sqs-pagamento-efetuado`
 
 Cada fila tem um workflow de apply próprio em `.github/workflows/`, usando um state remoto separado no S3.
+
+## Tabela DynamoDB (`terraform-dynamodb/`)
+
+- `orders` (chave `order_id`) — estado das orders de pagamento, consumida pela Lambda do `oficina-app-pagamento`.
+
+## CI/CD
+
+- **`terraform-check.yml`** — roda em todo push (exceto direto em `main`) e em PRs para `main`: `terraform fmt -check`, `terraform init -backend=false` e `terraform validate`, para `terraform/` (filas), `terraform-local/` (LocalStack) e `terraform-dynamodb/` (tabela). Não precisa de credenciais AWS.
+- **`terraform-apply-sqs-pagamento-*.yml`** e **`terraform-apply-dynamodb-oficina-pagamento.yml`** — disparam no push pra `main` (ou seja, no merge do PR), aplicando de fato na AWS.
+
+## Usando esses recursos no `oficina-app-pagamento`
+
+Depois que os workflows de apply rodarem com sucesso, pegue os outputs:
+
+```bash
+terraform -chdir=terraform output
+terraform -chdir=terraform-dynamodb output
+```
+
+E copie manualmente para as **GitHub Actions Variables** (não Secrets — não
+são segredos) do repositório `oficina-app-pagamento`:
+
+| Variable                | De onde vem |
+|--------------------------|-------------|
+| `SOLICITAR_QUEUE_ARN`     | `terraform -chdir=terraform output` (fila `sqs-pagamento-solicitar`, `queue_arn`) |
+| `EFETUADO_QUEUE_URL`      | idem, fila `sqs-pagamento-efetuado`, `queue_url` |
+| `RECUSADO_QUEUE_URL`      | idem, fila `sqs-pagamento-recusado`, `queue_url` |
+| `ORDERS_TABLE_NAME`       | `terraform -chdir=terraform-dynamodb output` (`table_name`) |
+
+Não existe automação entre os dois repositórios de propósito — os state
+files do Terraform ficam desacoplados, então essa cópia é manual sempre que
+os recursos mudarem (o que deve ser raro).
 
 ## Secrets necessários
 

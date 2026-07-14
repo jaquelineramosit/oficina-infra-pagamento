@@ -1,144 +1,142 @@
-# name: Terraform Apply DynamoDB Oficina Pagamento
+name: Terraform Apply DynamoDB Oficina Pagamento
 
-# on:
-#   push:
-#     branches: [ "main" ]
-#     paths:
-#       - "terraform-dynamodb/**"
-#       - ".github/workflows/terraform-apply-dynamodb-oficina-pagamento.yml"
-#   workflow_dispatch:
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "terraform-dynamodb/**"
+      - ".github/workflows/terraform-apply-dynamodb-oficina-pagamento.yml"
+  workflow_dispatch:
 
-# permissions:
-#   contents: read
+permissions:
+  contents: read
 
-# concurrency:
-#   group: terraform-dynamodb-oficina-pagamento-${{ github.ref_name }}
-#   cancel-in-progress: false
+concurrency:
+  group: terraform-dynamodb-oficina-pagamento-${{ github.ref_name }}
+  cancel-in-progress: false
 
-# defaults:
-#   run:
-#     working-directory: terraform-dynamodb
+defaults:
+  run:
+    working-directory: terraform-dynamodb
 
-# jobs:
-#   apply:
-#     name: Apply oficina-pagamento-tbl
-#     runs-on: ubuntu-latest
+jobs:
+  apply:
+    name: Apply orders
+    runs-on: ubuntu-latest
 
-#     env:
-#       AWS_ACCESS_KEY_ID: ${{ secrets['AWS_ACCESS_KEY_ID'] }}
-#       AWS_SECRET_ACCESS_KEY: ${{ secrets['AWS_SECRET_ACCESS_KEY'] }}
-#       AWS_SESSION_TOKEN: ${{ secrets['AWS_SESSION_TOKEN'] }}
-#       AWS_REGION: ${{ secrets['AWS_REGION'] }}
-#       TF_STATE_BUCKET: ${{ secrets['TF_STATE_BUCKET'] }}
-#       ENVIRONMENT: ${{ vars.ENVIRONMENT || 'dev' }}
-#       PROJECT_NAME: ${{ vars.PROJECT_NAME || 'oficina' }}
-#       TABLE_NAME: oficina-pagamento-tbl
-#       DATABASE_NAME: oficina-pagamento-db
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets['AWS_ACCESS_KEY_ID'] }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets['AWS_SECRET_ACCESS_KEY'] }}
+      AWS_SESSION_TOKEN: ${{ secrets['AWS_SESSION_TOKEN'] }}
+      AWS_REGION: ${{ secrets['AWS_REGION'] }}
+      TF_STATE_BUCKET: ${{ secrets['TF_STATE_BUCKET'] }}
+      ENVIRONMENT: ${{ vars.ENVIRONMENT || 'dev' }}
+      PROJECT_NAME: ${{ vars.PROJECT_NAME || 'oficina' }}
+      TABLE_NAME: orders
 
-#     steps:
-#       - name: Checkout
-#         uses: actions/checkout@v6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
 
-#       - name: Setup Terraform
-#         uses: hashicorp/setup-terraform@v4
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
 
-#       - name: Validate required secrets
-#         shell: bash
-#         run: |
-#           set -euo pipefail
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
 
-#           required_vars=(
-#             AWS_ACCESS_KEY_ID
-#             AWS_SECRET_ACCESS_KEY
-#             AWS_REGION
-#             TF_STATE_BUCKET
-#           )
+          required_vars=(
+            AWS_ACCESS_KEY_ID
+            AWS_SECRET_ACCESS_KEY
+            AWS_REGION
+            TF_STATE_BUCKET
+          )
 
-#           missing=0
-#           for var_name in "${required_vars[@]}"; do
-#             if [ -z "${!var_name:-}" ]; then
-#               echo "${var_name} secret is required."
-#               missing=1
-#             fi
-#           done
+          missing=0
+          for var_name in "${required_vars[@]}"; do
+            if [ -z "${!var_name:-}" ]; then
+              echo "${var_name} secret is required."
+              missing=1
+            fi
+          done
 
-#           if [ "${missing}" -ne 0 ]; then
-#             exit 1
-#           fi
+          if [ "${missing}" -ne 0 ]; then
+            exit 1
+          fi
 
-#           {
-#             printf 'TF_VAR_aws_region=%s\n' "${AWS_REGION}"
-#             printf 'TF_VAR_project_name=%s\n' "${PROJECT_NAME}"
-#             printf 'TF_VAR_environment=%s\n' "${ENVIRONMENT}"
-#             printf 'TF_VAR_table_name=%s\n' "${TABLE_NAME}"
-#             printf 'TF_VAR_database_name=%s\n' "${DATABASE_NAME}"
-#           } >> "${GITHUB_ENV}"
+          {
+            printf 'TF_VAR_aws_region=%s\n' "${AWS_REGION}"
+            printf 'TF_VAR_project_name=%s\n' "${PROJECT_NAME}"
+            printf 'TF_VAR_environment=%s\n' "${ENVIRONMENT}"
+            printf 'TF_VAR_table_name=%s\n' "${TABLE_NAME}"
+          } >> "${GITHUB_ENV}"
 
-#       - name: Configure AWS credentials
-#         uses: aws-actions/configure-aws-credentials@v6
-#         with:
-#           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-#           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-#           aws-session-token: ${{ env.AWS_SESSION_TOKEN }}
-#           aws-region: ${{ env.AWS_REGION }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ env.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-#       - name: Ensure Terraform state bucket
-#         shell: bash
-#         run: |
-#           set -euo pipefail
+      - name: Ensure Terraform state bucket
+        shell: bash
+        run: |
+          set -euo pipefail
 
-#           if aws s3api head-bucket --bucket "${TF_STATE_BUCKET}" 2>/dev/null; then
-#             echo "Terraform state bucket already exists."
-#           else
-#             echo "Creating Terraform state bucket."
+          if aws s3api head-bucket --bucket "${TF_STATE_BUCKET}" 2>/dev/null; then
+            echo "Terraform state bucket already exists."
+          else
+            echo "Creating Terraform state bucket."
 
-#             if [ "${AWS_REGION}" = "us-east-1" ]; then
-#               aws s3api create-bucket \
-#                 --bucket "${TF_STATE_BUCKET}" \
-#                 --region "${AWS_REGION}"
-#             else
-#               aws s3api create-bucket \
-#                 --bucket "${TF_STATE_BUCKET}" \
-#                 --region "${AWS_REGION}" \
-#                 --create-bucket-configuration LocationConstraint="${AWS_REGION}"
-#             fi
-#           fi
+            if [ "${AWS_REGION}" = "us-east-1" ]; then
+              aws s3api create-bucket \
+                --bucket "${TF_STATE_BUCKET}" \
+                --region "${AWS_REGION}"
+            else
+              aws s3api create-bucket \
+                --bucket "${TF_STATE_BUCKET}" \
+                --region "${AWS_REGION}" \
+                --create-bucket-configuration LocationConstraint="${AWS_REGION}"
+            fi
+          fi
 
-#           aws s3api put-bucket-versioning \
-#             --bucket "${TF_STATE_BUCKET}" \
-#             --versioning-configuration Status=Enabled
+          aws s3api put-bucket-versioning \
+            --bucket "${TF_STATE_BUCKET}" \
+            --versioning-configuration Status=Enabled
 
-#           aws s3api put-bucket-encryption \
-#             --bucket "${TF_STATE_BUCKET}" \
-#             --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+          aws s3api put-bucket-encryption \
+            --bucket "${TF_STATE_BUCKET}" \
+            --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
 
-#           aws s3api put-public-access-block \
-#             --bucket "${TF_STATE_BUCKET}" \
-#             --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+          aws s3api put-public-access-block \
+            --bucket "${TF_STATE_BUCKET}" \
+            --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
 
-#       - name: Terraform init
-#         run: terraform init -backend-config="bucket=${TF_STATE_BUCKET}" -backend-config="region=${AWS_REGION}" -backend-config="key=oficina-infra-pagamento-dynamodb/${ENVIRONMENT}/${TABLE_NAME}/terraform.tfstate" -backend-config="use_lockfile=true"
+      - name: Terraform init
+        run: terraform init -backend-config="bucket=${TF_STATE_BUCKET}" -backend-config="region=${AWS_REGION}" -backend-config="key=oficina-infra-pagamento-dynamodb/${ENVIRONMENT}/${TABLE_NAME}/terraform.tfstate" -backend-config="use_lockfile=true"
 
-#       - name: Terraform plan
-#         run: terraform plan -out=tfplan
+      - name: Terraform plan
+        run: terraform plan -out=tfplan
 
-#       - name: Terraform apply
-#         run: terraform apply -auto-approve tfplan
+      - name: Terraform apply
+        run: terraform apply -auto-approve tfplan
 
-#       - name: Validate DynamoDB table
-#         shell: bash
-#         run: |
-#           set -euo pipefail
+      - name: Validate DynamoDB table
+        shell: bash
+        run: |
+          set -euo pipefail
 
-#           status="$(aws dynamodb describe-table \
-#             --table-name "${TABLE_NAME}" \
-#             --region "${AWS_REGION}" \
-#             --query 'Table.TableStatus' \
-#             --output text)"
+          status="$(aws dynamodb describe-table \
+            --table-name "${TABLE_NAME}" \
+            --region "${AWS_REGION}" \
+            --query 'Table.TableStatus' \
+            --output text)"
 
-#           if [ "${status}" != "ACTIVE" ]; then
-#             echo "DynamoDB table validation failed. Status: ${status}"
-#             exit 1
-#           fi
+          if [ "${status}" != "ACTIVE" ]; then
+            echo "DynamoDB table validation failed. Status: ${status}"
+            exit 1
+          fi
 
-#           echo "DynamoDB table validated."
+          echo "DynamoDB table validated."
