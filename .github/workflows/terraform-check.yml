@@ -1,6 +1,8 @@
 name: Terraform Check
 
 on:
+  push:
+    branches-ignore: [ "main" ]
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
@@ -19,7 +21,7 @@ jobs:
 
     strategy:
       matrix:
-        working-directory: [ terraform ]
+        working-directory: [ terraform, terraform-local, terraform-dynamodb ]
 
     defaults:
       run:
