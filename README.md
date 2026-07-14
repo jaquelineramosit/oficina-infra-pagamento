@@ -69,6 +69,13 @@ local do [LocalStack](https://www.localstack.cloud/), via Docker. Esse
 diretório é independente do `terraform/` usado pelos workflows de deploy
 real — nada aqui afeta o pipeline da AWS.
 
+O `docker-compose.yml` também habilita o serviço `lambda` do LocalStack
+(além de `sqs`/`dynamodb`) e monta o socket do Docker — é o que permite ao
+[`oficina-app-pagamento`](https://github.com/jaquelineramosit/oficina-app-pagamento)
+publicar a Lambda de verdade dentro do LocalStack (não só invocá-la em
+processo), disparada automaticamente pela fila `sqs-pagamento-solicitar`.
+Veja o README daquele repositório para o passo a passo.
+
 ### Subir o LocalStack
 
 ```bash

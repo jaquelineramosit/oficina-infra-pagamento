@@ -5,10 +5,12 @@ services:
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=sqs,dynamodb
+      - SERVICES=sqs,dynamodb,lambda
       - DEBUG=0
+      - LAMBDA_EXECUTOR=docker
     volumes:
       - "./local/localstack-data:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
       interval: 5s
