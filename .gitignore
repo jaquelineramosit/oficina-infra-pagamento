@@ -10,3 +10,5 @@ override.tf.json
 *_override.tf.json
 
 local/localstack-data/
+resources-local/
+terraform-local/
