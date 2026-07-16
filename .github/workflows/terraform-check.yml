@@ -21,7 +21,7 @@ jobs:
 
     strategy:
       matrix:
-        working-directory: [ terraform, terraform-local, terraform-dynamodb ]
+        working-directory: [ terraform, terraform-dynamodb ]
 
     defaults:
       run:
